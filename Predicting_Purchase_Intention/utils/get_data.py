@@ -1,11 +1,12 @@
 import pandas as pd
+import numpy as np
 from google.cloud import bigquery
 
 def get_raw_data(project=None,
                  query="""
                        SELECT *
                        FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_20210131`
-                       LIMIT 1
+                       LIMIT 100
                        """,
                  drop=False):
 
@@ -24,7 +25,7 @@ def get_raw_data(project=None,
 
         for col, field in enumerate(row):
 
-            if type(field) == list:
+            if type(field) == np.ndarray:
                 if df.columns[col] not in expanded_fields:
                     expanded_fields.append(df.columns[col])
 
