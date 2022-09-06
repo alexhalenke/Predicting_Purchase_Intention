@@ -46,7 +46,7 @@ def get_raw_data(project=None,
                         df.loc[index,'device_web_info_browser'] = field[key]['browser']
                         df.loc[index,'device_web_info_browser_version'] = field[key]['browser_version']
 
-        if drop:
-            df.drop(expanded_fields, axis=1, inplace=True)
+    if drop:
+        df.drop(expanded_fields, axis=1, inplace=True)
 
     return df
