@@ -37,7 +37,6 @@ def drop_cols(df:pd.DataFrame) -> pd.DataFrame:
                      'event_params_payment_type']
 
     for field in fields_to_drop:
-        print(field)
         if field in df.columns:
             df.drop(field, axis=1, inplace=True)
 
