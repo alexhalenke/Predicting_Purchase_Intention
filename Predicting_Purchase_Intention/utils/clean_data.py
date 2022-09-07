@@ -34,7 +34,22 @@ def drop_cols(df:pd.DataFrame) -> pd.DataFrame:
                      'event_params_search_term',
                      'event_params_unique_search_term',
                      'event_params_currency',
-                     'event_params_payment_type']
+                     'event_params_payment_type',
+                     'event_value_in_usd',
+                     'event_bundle_sequence_id',
+                     'event_params_page_location',
+                     'device_operating_system_version',
+                     'device_web_info_browser_version',
+                     'traffic_source_name',
+                     'ecommerce_purchase_revenue_in_usd',
+                     'ecommerce_purchase_revenue',
+                     'ecommerce_tax_value_in_usd',
+                     'ecommerce_tax_value',
+                     'event_params_campaign',
+                     'event_params_page_referrer',
+                     'event_params_link_url',
+                     'event_params_transaction_id',
+                     'event_params_tax']
 
     for field in fields_to_drop:
         if field in df.columns:
