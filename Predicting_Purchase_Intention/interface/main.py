@@ -8,21 +8,18 @@ import glob
 
 def preprocess():
 
-    if SOURCE=='processed':
+    if SOURCE=='processed/':
         return
 
     files_to_process = glob.glob(LOCAL_DATA_PATH + SOURCE + '*.pkl')
 
-    print(SOURCE)
-    print([files_to_process[-1]])
-
-    for file in [files_to_process[-1]]:
+    for file in files_to_process:
 
         print(f"\n Preprocessing {file} ..")
 
         df = get_pandas([file])
 
-        if SOURCE=='raw':
+        if SOURCE=='raw/':
             df = expand_raw_cols(df)
 
         df = drop_cols(df)
@@ -39,8 +36,45 @@ def preprocess():
 
     return None
 
+def train():
+
+    print(f"\n Gathering processed files ..")
+
+    processed_files = glob.glob(LOCAL_DATA_PATH + 'processed/*.pkl')
+
+    df = pd.DataFrame()
+    for file in processed_files:
+        print(f"\n Loading file {file} ..")
+        df = pd.concat([df, pd.read_pickle(file)])
+
+    print(f"\n✅ Processed files: COMPLETE")
+
+    # Create Laolu model
+
+    # Train Laolu model
+
+    # Save Laolu model
+
+    return None
+
+def evaluate():
+
+    print(f"\n Evaluating model ..")
+
+    # Load Laolu model
+
+    # Evaluate Laolu model
+
+def predict():
+
+    print(f"\n Prediction ..")
+
+    # Load Laolu model
+
+    # Predict on Laolu model
+
 if __name__ == '__main__':
     preprocess()
-    # Clean the data
-    # Process the data
-    # Run the model
+    train()
+    evaluate()
+    predict()
