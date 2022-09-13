@@ -113,7 +113,7 @@ def initialize_model(X, y, drop):
                         (categorical_scaler, binary_col),    
                         remainder="drop")
         
-        print('Initializing Model')
+        print('Initializing Model...')
         '''
         Initialize XGBoost Classifier
         '''
@@ -132,13 +132,13 @@ def initialize_model(X, y, drop):
                     early_stopping_rounds=30)
         #Fitting the model with an early stopping criteria of 20 epochs to stop from overfitting
         print(model_xgb.evals_result())
-        print('Testing Precision')
+        print('Testing Precision...')
         y_pred = model_xgb.predict(pipe.transform(X_test))
         #Set y_pred to test with y_test
         return precision_score(y_test, y_pred)
     
     if drop == False:
-        print('Initializing Model')
+        print('Initializing Model...')
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)        
         #Split Training and Test Set
         X_train, X_eval, y_train, y_eval = train_test_split(X_train,y_train,random_state=42)
@@ -152,8 +152,8 @@ def initialize_model(X, y, drop):
                     eval_set=[(X_train_preproc, y_train), (X_eval_preproc, y_eval)],
                     early_stopping_rounds=30)
         #Fitting the model with an early stopping criteria of 20 epochs to stop from verfitting
-        print(model_xgb.evals_result())
-        print('Testing Precision')
+        # print(model_xgb.evals_result())
+        print('Testing Precision...')
         y_pred = model_xgb.predict(pipe.transform(X_test))
         #Set y_pred to test with y_test
         return precision_score(y_test, y_pred)
