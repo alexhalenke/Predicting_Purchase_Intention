@@ -16,20 +16,23 @@ def pipeline_normalizer(X:pd.DataFrame) -> pd.DataFrame:
         outliers = X[((X<(q1-1.5*IQR)) | (X>(q3+1.5*IQR)))]
         #Outliers are identified by the imbalance in their quantile differences
         return len(outliers)
-
-    binary_col=[]
+    
+    column_list = list(X.columns)
+    binary_col = []
     robust_scaling_cat = []
     standard_scaling_cat = []
-    for num in X.columns:
+    for num in column_list:
         if X[num].max() == 1 and X[num].min() == 0:
             #test to see which are categorical data of 1's and 0's
             binary_col.append(num)
+          
 
-        if find_outliers_IQR(X[num])>100:
+        if find_outliers_IQR(X[num])>100 and num not in binary_col:
             #arbitrarily set at 100 so we dont lose information in the noise--> Robust Scaler for these
             robust_scaling_cat.append(num)
-        else:
-            standard_scaling_cat.append(num)
+            
+        if find_outliers_IQR(X[num])<100 and num not in binary_col:
+            standard_scaling_cat.append(num)           
             #StandardScaler for these. Normally distributed with fewer than a hundred outliers
 
     if len(robust_scaling_cat)+len(standard_scaling_cat)+len(binary_col) != len(X.columns):
@@ -128,6 +131,7 @@ def initialize_model(X, y, drop):
                     eval_set=[(X_train_preproc, y_train), (X_eval_preproc, y_eval)],
                     early_stopping_rounds=30)
         #Fitting the model with an early stopping criteria of 20 epochs to stop from overfitting
+        print(model_xgb.evals_result())
         print('Testing Precision')
         y_pred = model_xgb.predict(pipe.transform(X_test))
         #Set y_pred to test with y_test
@@ -148,6 +152,7 @@ def initialize_model(X, y, drop):
                     eval_set=[(X_train_preproc, y_train), (X_eval_preproc, y_eval)],
                     early_stopping_rounds=30)
         #Fitting the model with an early stopping criteria of 20 epochs to stop from verfitting
+        print(model_xgb.evals_result())
         print('Testing Precision')
         y_pred = model_xgb.predict(pipe.transform(X_test))
         #Set y_pred to test with y_test
