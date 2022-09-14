@@ -16,17 +16,25 @@ def pipeline_normalizer(X:pd.DataFrame) -> pd.DataFrame:
         outliers = X[((X<(q1-1.5*IQR)) | (X>(q3+1.5*IQR)))]
         #Outliers are identified by the imbalance in their quantile differences
         return len(outliers)
+
+    col_drop = []
+    for index, num in enumerate(X.isnull().sum().sort_values(ascending = False)):
+        if num > 0.95*len(X):
+            col_drop.append(X.isnull().sum().sort_values(ascending = False).keys()[index])
+    
+    #drop columns that have a lot of missing values 
+    X = X.drop(columns = col_drop)    
     
     column_list = list(X.columns)
     binary_col = []
     robust_scaling_cat = []
     standard_scaling_cat = []
     for num in column_list:
+
         if X[num].max() == 1 and X[num].min() == 0:
             #test to see which are categorical data of 1's and 0's
             binary_col.append(num)
           
-
         if find_outliers_IQR(X[num])>100 and num not in binary_col:
             #arbitrarily set at 100 so we dont lose information in the noise--> Robust Scaler for these
             robust_scaling_cat.append(num)
@@ -34,6 +42,10 @@ def pipeline_normalizer(X:pd.DataFrame) -> pd.DataFrame:
         if find_outliers_IQR(X[num])<100 and num not in binary_col:
             standard_scaling_cat.append(num)           
             #StandardScaler for these. Normally distributed with fewer than a hundred outliers
+            
+        if num not in binary_col and num not in robust_scaling_cat and num not in standard_scaling_cat:
+            X = X.drop(columns = num)        
+
 
     if len(robust_scaling_cat)+len(standard_scaling_cat)+len(binary_col) != len(X.columns):
         #test to see if you can proceed
