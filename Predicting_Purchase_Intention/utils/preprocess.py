@@ -44,31 +44,59 @@ def input_target_variable(df:pd.DataFrame) -> pd.DataFrame:
 3. Slicing
 '''
 def slicing_purchasers(df:pd.DataFrame) -> pd.DataFrame:
-    #new User ID based on repeat purchases
-    df['iter_purch_tf'] = np.where(df['event_name'] == 'purchase', 1.0, 0.0)
-    df['user_pseudo_id'] = df['user_pseudo_id'].astype(str)
+
     df = df.sort_values(by=['event_timestamp'], ascending=True)
-    df['num_previous_purchase'] = df.groupby('user_pseudo_id')['iter_purch_tf'].transform(lambda x: x.cumsum().shift())
-    df['num_previous_purchase'] = (df['num_previous_purchase'].fillna(0)).astype(int)
-    df['new_user_id'] = df['user_pseudo_id'].astype(str) + df['num_previous_purchase'].astype(str)
-    df['user_pseudo_id'] = df['new_user_id']
-    df = df.drop(columns = ['new_user_id'])
-    #Create DF with amount purchases per User Pseudo ID
-    all_purchases = df[df['event_name']=='purchase']
-    all_purchases2 = all_purchases.copy()
-    all_purchases2['amount_purchases'] = 1
-    df_amount_purchases = pd.pivot_table(data=all_purchases2, index='user_pseudo_id', values='event_name', aggfunc='count').reset_index().rename(columns={'event_name': 'amount_purchases'})
-    #Merge with main DF
-    df1 = df.merge(df_amount_purchases,on='user_pseudo_id', how='outer').fillna(0)
-    #New column with timestamp of first purchase
-    all_purchases_timestamp = all_purchases[['user_pseudo_id','event_timestamp']]
-    first_purchase = pd.DataFrame(all_purchases_timestamp.groupby(['user_pseudo_id'])['event_timestamp'].agg('min').reset_index().rename(columns={'event_timestamp': 'date_first_purchase'}))
-    #Merge with main DF
-    df2 = df1.merge(first_purchase, on='user_pseudo_id', how='outer')
-    df2.reset_index(inplace=True, drop=True)
-    df2['event_params_ga_session_number'] = df2['event_params_ga_session_number'].astype(float)
-    df2.drop(columns=['iter_purch_tf', 'amount_purchases', 'date_first_purchase'], inplace=True)
-    return df2
+    df.reset_index(inplace=True)
+    df.drop(columns=['index'],inplace=True)
+    purchasers = df[df['event_name']=='purchase']['user_pseudo_id'].unique().tolist()
+
+    drop_rows = []
+    for purchaser in purchasers:
+
+        # List of unique purchasers
+        df_purchaser = df[df['user_pseudo_id'] == purchaser].copy()
+
+        # Index of first purchase (sorted by time)
+        first_purch_idx = df_purchaser[df_purchaser['event_name'] == 'purchase'].index[0]
+
+        # Index of all purchasers events
+        full_purch_idx = df_purchaser.index.to_list()
+
+        # Gather index of all events beyond and including first purchase
+        for idx in full_purch_idx:
+            if idx >= first_purch_idx:
+                drop_rows.append(idx)
+
+    # Drop all events beyond and including first purchase
+    df.drop(drop_rows, inplace=True)
+
+    # #new User ID based on repeat purchases
+    # df['iter_purch_tf'] = np.where(df['event_name'] == 'purchase', 1.0, 0.0)
+    # df['user_pseudo_id'] = df['user_pseudo_id'].astype(str)
+    # df = df.sort_values(by=['event_timestamp'], ascending=True)
+    # df['num_previous_purchase'] = df.groupby('user_pseudo_id')['iter_purch_tf'].transform(lambda x: x.cumsum().shift())
+    # df['num_previous_purchase'] = (df['num_previous_purchase'].fillna(0)).astype(int)
+    # df['new_user_id'] = df['user_pseudo_id'].astype(str) + df['num_previous_purchase'].astype(str)
+    # df['user_pseudo_id'] = df['new_user_id']
+    # df = df.drop(columns = ['new_user_id'])
+    # #Create DF with amount purchases per User Pseudo ID
+    # all_purchases = df[df['event_name']=='purchase']
+    # all_purchases2 = all_purchases.copy()
+    # all_purchases2['amount_purchases'] = 1
+    # df_amount_purchases = pd.pivot_table(data=all_purchases2, index='user_pseudo_id', values='event_name', aggfunc='count').reset_index().rename(columns={'event_name': 'amount_purchases'})
+    # #Merge with main DF
+    # df1 = df.merge(df_amount_purchases,on='user_pseudo_id', how='outer').fillna(0)
+    # #New column with timestamp of first purchase
+    # all_purchases_timestamp = all_purchases[['user_pseudo_id','event_timestamp']]
+    # first_purchase = pd.DataFrame(all_purchases_timestamp.groupby(['user_pseudo_id'])['event_timestamp'].agg('min').reset_index().rename(columns={'event_timestamp': 'date_first_purchase'}))
+    # #Merge with main DF
+    # df2 = df1.merge(first_purchase, on='user_pseudo_id', how='outer')
+    # df2.reset_index(inplace=True, drop=True)
+    # df2['event_params_ga_session_number'] = df2['event_params_ga_session_number'].astype(float)
+    # df2.drop(columns=['iter_purch_tf', 'amount_purchases', 'date_first_purchase'], inplace=True)
+
+
+    return df
 
 
 '''
@@ -120,8 +148,6 @@ def event_pagenames(df:pd.DataFrame) -> pd.DataFrame:
     df = df[['user_pseudo_id','unique_combinations', 'Page Category']]
     df = pd.pivot_table(df, values='Page Category', index='user_pseudo_id', columns='unique_combinations',aggfunc='count')
     df = df.reset_index()
-    #Drop purchase column
-    df = df.drop(['purchase & Checkout Confirmation'], axis=1)
     return df
 
 '''
@@ -181,11 +207,26 @@ def series_other(series: pd.Series,
 All the preprocessing for creating a DataFrame
 '''
 def put_together(df:pd.DataFrame) -> pd.DataFrame:
+
+
     a1 = target_slicing(df)
-    d1 = a1[['user_pseudo_id','target_variable','num_previous_purchase']]
+    d1 = a1[['user_pseudo_id','target_variable']]
     d1 = d1.drop_duplicates()
     b1 = create_features(a1)
-    b2 = categorise_all(a1)
-    c1 = b1.merge(b2, how='left',on='user_pseudo_id').merge(d1, how='left',on='user_pseudo_id')
-    c1['num_previous_purchase'] = c1['num_previous_purchase'].astype(float)
+    b2 = categorise_all(a1).reset_index()
+    c1 = b1.merge(b2, how='left',on='user_pseudo_id').merge(d1, how='left',on='user_pseudo_id').fillna(0)
+
+
+    # Drop highly correlated features
+    columns = c1.columns
+    event_cols = [column for column in columns if '&' in column]
+    event_cols.append('target_variable')
+    df_events = c1[event_cols].copy()
+    #df_events = df_events.fillna(0)
+    df_events = df_events.clip(upper=1)
+    correlations = abs(df_events.corr().fillna(1)['target_variable']).sort_values(ascending=False)
+    drop_cols = correlations[correlations > 0.80].index.to_list()
+    drop_cols.remove('target_variable')
+    c1=c1.drop(columns=drop_cols)
+
     return c1

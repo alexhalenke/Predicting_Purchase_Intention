@@ -9,6 +9,7 @@ numpy
 pandas
 scikit-learn
 dict
+xgboost
 
 # tests/linter
 black
