@@ -14,11 +14,15 @@ def get_pandas(files: list) -> pd.DataFrame:
 
 
 def save_pandas(file: str,
+                stream: str,
                 df: pd.DataFrame):
 
-    file = file.split('/')[-1][:-4]
+    file = file.split('/')[-1]
 
-    file_name = f'{LOCAL_DATA_PATH}processed/{file}_processed.pkl'
+    if file[:-4] != '.pkl':
+        file = file + '.pkl'
+
+    file_name = f'{LOCAL_DATA_PATH}{stream}/{file}'
 
     print(f"\n Saving {file_name}")
 
