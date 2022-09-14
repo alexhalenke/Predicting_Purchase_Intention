@@ -131,7 +131,7 @@ def initialize_model(X, y, drop):
                     eval_set=[(X_train_preproc, y_train), (X_eval_preproc, y_eval)],
                     early_stopping_rounds=30)
         #Fitting the model with an early stopping criteria of 20 epochs to stop from overfitting
-        print(model_xgb.evals_result())
+        # print(model_xgb.evals_result())
         print('Testing Precision...')
         y_pred = model_xgb.predict(pipe.transform(X_test))
         #Set y_pred to test with y_test
