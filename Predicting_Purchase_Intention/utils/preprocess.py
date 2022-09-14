@@ -225,8 +225,17 @@ def put_together(df:pd.DataFrame) -> pd.DataFrame:
     #df_events = df_events.fillna(0)
     df_events = df_events.clip(upper=1)
     correlations = abs(df_events.corr().fillna(1)['target_variable']).sort_values(ascending=False)
-    drop_cols = correlations[correlations > 0.80].index.to_list()
+    drop_cols = correlations[correlations > 0.85].index.to_list()
     drop_cols.remove('target_variable')
     c1=c1.drop(columns=drop_cols)
+    c1.drop('engagement_time_per_visitor', axis=1, inplace=True)
+
+    columns = c1.columns
+    drop_cols1 = [col for col in columns if 'add_payment' in col]
+    drop_cols2 = [col for col in columns if 'add_shipping' in col]
+    drop_cols = drop_cols1 + drop_cols2
+    c1.drop(drop_cols, axis=1, inplace=True)
+
+    #breakpoint()
 
     return c1
