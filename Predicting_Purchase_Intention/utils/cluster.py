@@ -19,24 +19,26 @@ def cluster(X,df):
     
     #drop columns that have a lot of missing values 
     X = X.drop(columns = col_drop)
-
+    #scale the X with the pipeline from utils
     X_scaled = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
     
     threhsold_pca = 3
+    #PCA will collapse the features into a three value for each row
     pca = PCA(n_components=threhsold_pca, whiten=True)
+    #fit pca on the scaled X
     pca.fit(X_scaled)
     #instantiate and fit the PCA model
     X_proj = pd.DataFrame(pca.transform(X_scaled))
     
     kmeans_scaled = KMeans(n_clusters = 5)
     kmeans_scaled.fit(X_proj)
-    
+    #generate the labels for the kmeans test
     labels_scaled = kmeans_scaled.labels_    
     test_clusters = 5
 
     print('Working with ' + str(test_clusters) + ' clusters to segment the DataSet', flush=True)
     print("-"*80)
-
+    #instantiate the Kmeans model
     model = KMeans(n_clusters = test_clusters, max_iter = 300)
     model.fit(X_proj)
     labelling = model.labels_
@@ -48,6 +50,7 @@ def cluster(X,df):
 
     for cluster in np.unique(labelling):
         customer_mixes[cluster] = test_labelled[test_labelled.label == cluster]
+    #use the above code if you want to return a dataframe of some sort: customer_mixes[0] for example
     
     return model
         
