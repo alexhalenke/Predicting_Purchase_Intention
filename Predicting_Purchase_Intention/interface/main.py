@@ -147,21 +147,11 @@ def train():
     # Train KMeans
     KModel.fit(X_train_KNN_preproc_proj)
 
+    print(f"\n Saving KMeans model ..")
+
     # Save KMeans model
     save_model('k_model',
                KModel)
-
-    labelling = KModel.labels_
-
-    test_labelled = pd.concat([df_train_KNN,pd.Series(labelling)],axis=1).rename(columns={0:"label"})
-    test_labelled = test_labelled.set_index('user_pseudo_id')
-
-    customer_mixes = {}
-
-    for cluster in np.unique(labelling):
-        customer_mixes[cluster] = test_labelled[test_labelled.label == cluster]
-
-    breakpoint()
 
     return None
 
@@ -190,29 +180,61 @@ def evaluate():
     print(f"\n Evaluating XGB ..")
 
     # Evaluate Laolu model on Test
-    y_pred = XGBModel.predict(X_test_preproc)
+    XGB_pred = XGBModel.predict(X_test_preproc)
 
-    precision = precision_score(y_test, y_pred)
+    precision = precision_score(y_test, XGB_pred)
 
     print(f"\n XGB precision",precision)
 
     print(f"\n Evaluating KMeans ..")
 
-    # Cluster on PCA
-    pca = PCA(n_components=3, whiten=True)
-    X_test_preproc_proj = pd.DataFrame(pca.fit_transform(X_test_preproc))
+    print(f"\n Generated {len(np.unique(KModel.labels_))} clusters ..")
 
-    KModel.predict(X_test_preproc_proj)
+    for cluster in range(len(np.unique(KModel.labels_))):
+        print(f'   Cluster {np.unique(KModel.labels_, return_counts=True)[0][cluster]}',
+              f': {(np.unique(KModel.labels_, return_counts=True)[1][cluster] / len(KModel.labels_) * 100):.2f}%')
 
-    return precision
+    return None
 
-def predict():
+def predict(df: pd.DataFrame = None):
 
     print(f"\n Prediction ..")
 
-    # Load Laolu model
+    if df is None:
+        # Load test data
+        files_to_process = glob.glob(LOCAL_DATA_PATH + 'test/*.pkl')
+        df_test = get_pandas(files_to_process)
 
-    # Predict on Laolu model
+        if len(df_test) == 0:
+            print(f"\n No data ..")
+
+            return 'No data ..'
+
+    XGBModel = load_model('xgb_model')
+    KModel = load_model('k_model')
+    pipe = load_model('fitted_pipe')
+
+    X_test = df_test.drop(['user_pseudo_id', 'target_variable'], axis=1).copy()
+
+    X_test_preproc = pipe.transform(X_test)
+
+    XGB_pred = XGBModel.predict(X_test_preproc)
+
+    pca = PCA(n_components=3, whiten=True)
+    X_test_preproc_proj = pd.DataFrame(pca.fit_transform(X_test_preproc))
+
+    K_pred = KModel.predict(X_test_preproc_proj)
+
+    # Flip to give us the predicted class
+    # 0 = non-purchaser
+    # 1 = purchaser
+    df_test['target_pred'] = (XGB_pred == 0) * 1
+
+    df_test = pd.concat([df_test,pd.Series(K_pred)],axis=1).rename(columns={0:"label"})
+    df_test = df_test.set_index('user_pseudo_id')
+
+    return df_test
+
 
 if __name__ == '__main__':
     preprocess()
