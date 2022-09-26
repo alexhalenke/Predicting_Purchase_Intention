@@ -472,4 +472,8 @@ page_dict = {
  'Google Kirkland Campus Lapel Pin': 'Product Display Page',
  'Google Seattle Campus Lapel Pin': 'Product Display Page',
  'Google F/C Longsleeve Charcoal': 'Product Display Page'
+<<<<<<< HEAD
  }
+=======
+ }
+>>>>>>> ab86f2495b4740435220f6e43a28598f21ff9379
